@@ -65,7 +65,7 @@ class ClusterTopologyRefreshScheduler implements Runnable, ClusterEventListener 
     private final EventExecutorGroup genericWorkerPool;
 
     ClusterTopologyRefreshScheduler(Supplier<ClusterClientOptions> clientOptions, Supplier<Partitions> partitions,
-            Supplier<CompletionStage<?>> refreshTopology, ClientResources clientResources) {
+                                    Supplier<CompletionStage<?>> refreshTopology, ClientResources clientResources) {
 
         this.clientOptions = clientOptions;
         this.partitions = partitions;
@@ -74,8 +74,8 @@ class ClusterTopologyRefreshScheduler implements Runnable, ClusterEventListener 
         this.clusterTopologyRefreshTask = new ClusterTopologyRefreshTask(refreshTopology);
     }
 
+    // 主动更新拓扑
     protected void activateTopologyRefreshIfNeeded() {
-
         ClusterClientOptions options = clientOptions.get();
         ClusterTopologyRefreshOptions topologyRefreshOptions = options.getTopologyRefreshOptions();
 
@@ -116,7 +116,7 @@ class ClusterTopologyRefreshScheduler implements Runnable, ClusterEventListener 
     public void run() {
 
         logger.debug("ClusterTopologyRefreshScheduler.run()");
-
+        System.out.printf("ClusterTopologyRefreshScheduler.run()\n");
         if (isEventLoopActive()) {
 
             if (!clientOptions.get().isRefreshClusterView()) {
@@ -247,12 +247,13 @@ class ClusterTopologyRefreshScheduler implements Runnable, ClusterEventListener 
         return true;
     }
 
+    // 返回 false 就不刷新
     private boolean acquireTimeout() {
 
         Timeout existingTimeout = timeoutRef.get();
 
         if (existingTimeout != null) {
-            if (!existingTimeout.isExpired()) {
+            if (!existingTimeout.isExpired()) { // 如果没有到期，就不刷新
                 return false;
             }
         }

@@ -105,6 +105,14 @@ public class TopologyComparators {
      * @return {@code true} if {@code UPSTREAM} or {@code REPLICA} flags changed or the responsible slots changed.
      */
     public static boolean isChanged(Partitions o1, Partitions o2) {
+        System.out.println("Old Partitions: ");
+        for (RedisClusterNode node : o1) {
+            System.out.println("Node Port: " + node.getUri().getPort() + ", Slots: " + compressSlots(node.getSlots()));
+        }
+        System.out.println("New Partitions: ");
+        for (RedisClusterNode node : o2) {
+            System.out.println("Node Port: " + node.getUri().getPort() + ", Slots: " + compressSlots(node.getSlots()));
+        }
 
         if (o1.size() != o2.size()) {
             return true;
@@ -329,6 +337,39 @@ public class TopologyComparators {
             return BY_LATENCY;
         }
 
+    }
+
+    // Add this utility method to compress slot ranges
+    public static String compressSlots(List<Integer> slots) {
+        if (slots == null || slots.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder result = new StringBuilder();
+        int start = slots.get(0);
+        int prev = start;
+
+        for (int i = 1; i < slots.size(); i++) {
+            if (slots.get(i) != prev + 1) {
+                // End of a range
+                if (start == prev) {
+                    result.append(start).append(",");
+                } else {
+                    result.append(start).append("-").append(prev).append(",");
+                }
+                start = slots.get(i);
+            }
+            prev = slots.get(i);
+        }
+
+        // Handle the last range
+        if (start == prev) {
+            result.append(start);
+        } else {
+            result.append(start).append("-").append(prev);
+        }
+
+        return result.toString();
     }
 
 }

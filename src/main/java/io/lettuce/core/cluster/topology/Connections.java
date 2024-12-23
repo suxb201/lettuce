@@ -87,7 +87,8 @@ class Connections {
      * @return the {@link Requests}.
      */
     public Requests requestTopology(long timeout, TimeUnit timeUnit) {
-
+        // print connection info
+        System.out.printf("Requesting topology from %s\n", connections);
         return doRequest(() -> {
 
             CommandArgs<String, String> args = new CommandArgs<>(StringCodec.UTF8).add(CommandKeyword.NODES);

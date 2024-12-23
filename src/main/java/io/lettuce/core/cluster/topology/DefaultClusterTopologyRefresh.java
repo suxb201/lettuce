@@ -84,14 +84,14 @@ class DefaultClusterTopologyRefresh implements ClusterTopologyRefresh {
      * Load partition views from a collection of {@link RedisURI}s and return the view per {@link RedisURI}. Partitions contain
      * an ordered list of {@link RedisClusterNode}s. The sort key is latency. Nodes with lower latency come first.
      *
-     * @param seed collection of {@link RedisURI}s
+     * @param seed           collection of {@link RedisURI}s
      * @param connectTimeout connect timeout
-     * @param discovery {@code true} to discover additional nodes
+     * @param discovery      {@code true} to discover additional nodes
      * @return mapping between {@link RedisURI} and {@link Partitions}
      */
     @Override
     public CompletionStage<Map<RedisURI, Partitions>> loadViews(Iterable<RedisURI> seed, Duration connectTimeout,
-            boolean discovery) {
+                                                                boolean discovery) {
 
         if (!isEventLoopActive()) {
             return CompletableFuture.completedFuture(Collections.emptyMap());
@@ -105,18 +105,24 @@ class DefaultClusterTopologyRefresh implements ClusterTopologyRefresh {
         CompletableFuture<NodeTopologyViews> composition = tracker.whenComplete(map -> {
             return new Connections(clientResources, map);
         }).thenCompose(connections -> {
+            // print connections port
 
             Requests requestedTopology = connections.requestTopology(commandTimeoutNs, TimeUnit.NANOSECONDS);
             Requests requestedInfo = connections.requestInfo(commandTimeoutNs, TimeUnit.NANOSECONDS);
             return CompletableFuture.allOf(requestedTopology.allCompleted(), requestedInfo.allCompleted())
-                    .thenApplyAsync(ignore -> getNodeSpecificViews(requestedTopology, requestedInfo),
-                            clientResources.eventExecutorGroup())
+                    .thenApplyAsync(ignore -> getNodeSpecificViews(requestedTopology, requestedInfo), clientResources.eventExecutorGroup())
                     .thenCompose(views -> {
                         if (discovery && isEventLoopActive()) {
 
                             Set<RedisURI> allKnownUris = views.getClusterNodes();
                             Set<RedisURI> discoveredNodes = difference(allKnownUris, toSet(seed));
 
+                            // print discourse nodes
+                            System.out.printf("seed: %s\n", seed);
+                            System.out.printf("AllKnownUris: %s\n", allKnownUris);
+                            System.out.printf("DiscoveredNodes: %s\n", discoveredNodes);
+
+                            // 没有发现新 node 就认为完成了吗？？？
                             if (discoveredNodes.isEmpty()) {
                                 return CompletableFuture.completedFuture(views);
                             }
@@ -229,6 +235,8 @@ class DefaultClusterTopologyRefresh implements ClusterTopologyRefresh {
         for (RedisURI nodeUri : nodes) {
 
             try {
+                // print nodesUri port and requestedTopology
+                System.out.printf("NodeUri %s return requestedTopology: %s\n", nodeUri, requestedTopology);
                 NodeTopologyView nodeTopologyView = NodeTopologyView.from(nodeUri, requestedTopology, requestedInfo);
 
                 if (!nodeTopologyView.isAvailable()) {
@@ -236,6 +244,7 @@ class DefaultClusterTopologyRefresh implements ClusterTopologyRefresh {
                 }
 
                 RedisClusterNode node = nodeTopologyView.getOwnPartition();
+
                 if (node.getUri() == null) {
                     node.setUri(nodeUri);
                 } else {
