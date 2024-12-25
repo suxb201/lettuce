@@ -1,6 +1,8 @@
 package io.lettuce.core.cluster.topology;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -88,7 +90,8 @@ class Connections {
      */
     public Requests requestTopology(long timeout, TimeUnit timeUnit) {
         // print connection info
-        System.out.printf("Requesting topology from %s\n", connections);
+        String formattedTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+        System.out.printf("%s Requesting topology from %s\n", formattedTime, connections);
         return doRequest(() -> {
 
             CommandArgs<String, String> args = new CommandArgs<>(StringCodec.UTF8).add(CommandKeyword.NODES);

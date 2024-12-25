@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.ConnectionEvents;
@@ -180,8 +182,14 @@ public class DefaultEndpoint implements RedisChannelWriter, Endpoint, PushHandle
     public <K, V, T> RedisCommand<K, V, T> write(RedisCommand<K, V, T> command) {
 
         LettuceAssert.notNull(command, "Command must not be null");
-
-        RedisException validation = validateWrite(1);
+         
+        RedisException validation = null;
+        try {
+            validation = validateWrite(1);
+        } catch (Exception e) {
+            logger.error("Exception during command validation: " + e.getMessage() + ", Command: " + command.toString(), e);
+            throw e;
+        }
         if (validation != null) {
             command.completeExceptionally(validation);
             return command;
@@ -285,6 +293,9 @@ public class DefaultEndpoint implements RedisChannelWriter, Endpoint, PushHandle
     private RedisException validateWrite(int commands) {
 
         if (isClosed()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+            String now = LocalDateTime.now().format(formatter);
+            System.out.println("Current time: " + now);
             return new RedisException("Connection is closed");
         }
 

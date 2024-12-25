@@ -23,6 +23,8 @@ import java.io.Closeable;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1001,13 +1003,16 @@ public class RedisClusterClient extends AbstractRedisClient {
         fetchPartitions(topologyRefreshSource).whenComplete((nodes, throwable) -> {
 
             if (throwable == null) {
+                String formattedTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+                System.out.printf("%s fetchPartitionsAsync complete\n", formattedTime);
                 future.complete(nodes);
                 return;
             }
-
+            String formattedTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+            System.out.printf("%s fetchPartitionsAsync error: %s\n", formattedTime, throwable.toString());
             // Attempt recovery using initial seed nodes
             if (useDynamicRefreshSources() && topologyRefreshSource != initialUris) {
-
+                System.out.printf("%s fetchPartitionsAsync error, try to use initialUris\n", formattedTime);
                 fetchPartitions(initialUris).whenComplete((nextNodes, nextThrowable) -> {
 
                     if (nextThrowable != null) {

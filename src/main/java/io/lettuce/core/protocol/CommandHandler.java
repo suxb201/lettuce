@@ -363,7 +363,12 @@ public class CommandHandler extends ChannelDuplexHandler implements HasQueuedCom
         tracedEndpoint = null;
         setState(LifecycleState.DISCONNECTED);
         setState(LifecycleState.DEACTIVATING);
-
+        
+        logger.info("channelInactive Source Address: " + ctx.channel().remoteAddress() + ", Destination Address: " + ctx.channel().localAddress());
+        List<RedisCommand<?, ?, ?>> commands = drainCommands(stack);
+        for (RedisCommand<?, ?, ?> command : commands) {
+            logger.info("channelInactive-Executing command: " + command.toString());
+        }
         endpoint.notifyChannelInactive(ctx.channel());
         endpoint.notifyDrainQueuedCommands(this);
 

@@ -22,6 +22,8 @@ package io.lettuce.core.cluster;
 import static io.lettuce.core.event.cluster.AdaptiveRefreshTriggeredEvent.*;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -217,7 +219,8 @@ class ClusterTopologyRefreshScheduler implements Runnable, ClusterEventListener 
         if (!acquireTimeout()) {
             return false;
         }
-
+        String formattedTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+        System.out.printf("%s scheduleRefresh because of indicateTopologyRefreshSignal\n", formattedTime);
         return scheduleRefresh();
     }
 

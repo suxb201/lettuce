@@ -107,11 +107,11 @@ public class TopologyComparators {
     public static boolean isChanged(Partitions o1, Partitions o2) {
         System.out.println("Old Partitions: ");
         for (RedisClusterNode node : o1) {
-            System.out.println("Node Port: " + node.getUri().getPort() + ", Slots: " + compressSlots(node.getSlots()));
+            System.out.println("Node: " + node.getUri() + ", Slots: " + compressSlots(node.getSlots()));
         }
         System.out.println("New Partitions: ");
         for (RedisClusterNode node : o2) {
-            System.out.println("Node Port: " + node.getUri().getPort() + ", Slots: " + compressSlots(node.getSlots()));
+            System.out.println("Node: " + node.getUri() + ", Slots: " + compressSlots(node.getSlots()));
         }
 
         if (o1.size() != o2.size()) {

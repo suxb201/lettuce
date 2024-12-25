@@ -126,15 +126,27 @@ class ClusterFutureSyncInvocationHandler<K, V> extends AbstractInvocationHandler
             Object result = targetMethod.invoke(asyncApi, args);
 
             if (result instanceof RedisFuture) {
-                RedisFuture<?> command = (RedisFuture<?>) result;
-                if (!method.getName().equals("exec") && !method.getName().equals("multi")) {
-                    if (connection instanceof StatefulRedisConnection && ((StatefulRedisConnection) connection).isMulti()) {
-                        return null;
+                try{
+                    RedisFuture<?> command = (RedisFuture<?>) result;
+                    if (!method.getName().equals("exec") && !method.getName().equals("multi")) {
+                        if (connection instanceof StatefulRedisConnection && ((StatefulRedisConnection) connection).isMulti()) {
+                            return null;
+                        }
                     }
+                    return Futures.awaitOrCancel(command, getTimeoutNs(command), TimeUnit.NANOSECONDS);
+                } catch(Exception e) {
+                    System.out.println("Exception in ClusterFutureSyncInvocationHandler: " + e.getMessage());
+                    System.out.println("Command in ClusterFutureSyncInvocationHandler: " + result.toString());
+                    if (connection instanceof StatefulRedisConnection) {
+                        StatefulRedisConnection<?, ?> statefulConnection = (StatefulRedisConnection<?, ?>) connection;
+                        Object clientName = statefulConnection.sync().clientGetname();
+                        if (clientName != null) {
+                            System.out.println("IP: " + clientName.toString());
+                        }
+                    }
+                    throw e;
                 }
-                return Futures.awaitOrCancel(command, getTimeoutNs(command), TimeUnit.NANOSECONDS);
             }
-
             return result;
 
         } catch (InvocationTargetException e) {
